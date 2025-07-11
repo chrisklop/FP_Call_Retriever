@@ -1,0 +1,35 @@
+
+> cdr-analytics-backend@1.0.0 dev
+> tsx src/index.ts
+
+Database initialized at: /home/chris/Projects/v0-call-metrics-dashboard-local/backend/data/cdr_analytics.db
+Database schema initialized
+🚀 CDR Analytics Backend running on port 3001
+📊 Database statistics: {
+  totalRecords: 0,
+  totalCalls: 0,
+  totalLocations: 0,
+  databasePath: '/home/chris/Projects/v0-call-metrics-dashboard-local/backend/data/cdr_analytics.db'
+}
+🌐 CORS enabled for: http://localhost:3000, http://localhost:5173
+📡 API endpoints available at: http://localhost:3001/api
+2025-07-10T15:58:07.029Z - GET /api/health
+2025-07-10T16:45:45.931Z - POST /api/import-cdr
+Starting CDR import...
+Starting CDR import for last 48 hours using Python script...
+Converting 48 hours to 2 days for Python script
+Executing Python script: /home/chris/Projects/v0-call-metrics-dashboard-local/backend/scripts/get_cdr.py
+[Python] Requesting CDR report for last 2 day(s)...
+[Python] Generating report with payload: {"templateId": "cdr", "days": 2}
+Python script failed with code 1
+stderr: 
+CDR import failed: Error: Python script failed: Unknown error
+    at ChildProcess.<anonymous> (/home/chris/Projects/v0-call-metrics-dashboard-local/backend/src/services/webex-service.ts:129:18)
+    at ChildProcess.emit (node:events:517:28)
+    at maybeClose (node:internal/child_process:1098:16)
+    at ChildProcess._handle.onexit (node:internal/child_process:303:5)
+CDR import failed: Error: Failed to import CDR data: Python script failed: Unknown error
+    at WebexCDRService.importCDRData (/home/chris/Projects/v0-call-metrics-dashboard-local/backend/src/services/webex-service.ts:86:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at CDRController.importCDR (/home/chris/Projects/v0-call-metrics-dashboard-local/backend/src/controllers/cdr-controller.ts:92:49)
+\nShutting down gracefully...

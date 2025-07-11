@@ -1,0 +1,27 @@
+
+> v0-call-metrics-dashboard@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.0
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling / ...
+ ✓ Compiled / in 2.1s (455 modules)
+ GET / 200 in 2311ms
+ ✓ Compiled in 242ms (233 modules)
+ GET / 200 in 64ms
+ ✓ Compiled in 598ms (455 modules)
+ ✓ Compiled in 222ms (455 modules)
+ GET / 200 in 146ms
+ GET / 200 in 53ms
+ GET / 200 in 51ms
+ GET / 200 in 39ms
+ GET / 200 in 316ms
+ GET / 200 in 225ms
+ GET / 200 in 368ms
+ GET / 200 in 372ms
+ GET / 200 in 92ms
+ GET / 200 in 63ms
+ GET / 200 in 55ms
