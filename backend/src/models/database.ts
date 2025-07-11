@@ -339,6 +339,7 @@ class DatabaseManager {
     startDate?: string
     endDate?: string
     location?: string
+    phoneNumber?: string
     limit?: number
     offset?: number
   }): any[] {
@@ -356,8 +357,7 @@ class DatabaseManager {
         answered,
         call_outcome,
         release_time,
-        correlation_id,
-        leg_type
+        correlation_id
       FROM cdr_records
       WHERE 1=1
     `
@@ -377,6 +377,12 @@ class DatabaseManager {
     if (filters.location && filters.location !== 'all') {
       query += ' AND location = ?'
       params.push(filters.location)
+    }
+
+    if (filters.phoneNumber && filters.phoneNumber.trim()) {
+      const phonePattern = `%${filters.phoneNumber.trim()}%`
+      query += ' AND (calling_number LIKE ? OR called_number LIKE ?)'
+      params.push(phonePattern, phonePattern)
     }
 
     query += ' ORDER BY start_time DESC'

@@ -56,6 +56,9 @@ export default function Home() {
   const [showAggregatedCalls, setShowAggregatedCalls] = useState(true)
   const [aggregatedCalls, setAggregatedCalls] = useState<CDRRecord[]>([])
   const [rawCalls, setRawCalls] = useState<CDRRecord[]>([])
+  
+  // Phone number filtering state
+  const [phoneFilter, setPhoneFilter] = useState('')
 
   useEffect(() => {
     loadInitialData()
@@ -68,7 +71,7 @@ export default function Home() {
     } else {
       loadCDRData()
     }
-  }, [selectedLocation, currentPage, summaryMode, selectedClinic, dateRange])
+  }, [selectedLocation, currentPage, summaryMode, selectedClinic, dateRange, phoneFilter])
 
   // Update displayed data when aggregation mode changes
   useEffect(() => {
@@ -115,6 +118,10 @@ export default function Home() {
 
       if (dateRange.endDate) {
         params.append('endDate', dateRange.endDate)
+      }
+
+      if (phoneFilter) {
+        params.append('phoneNumber', phoneFilter)
       }
 
       const response = await fetch(`http://localhost:3001/api/calls/data?${params}`)
@@ -287,6 +294,81 @@ export default function Home() {
     return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`
   }
 
+  // CSV Export functions
+  const handleExportSummary = async () => {
+    try {
+      const params = new URLSearchParams({
+        format: 'grouped'
+      })
+      
+      if (selectedClinic !== 'all') {
+        params.append('location', selectedClinic)
+      }
+      
+      if (dateRange.startDate) {
+        params.append('startDate', dateRange.startDate)
+      }
+      
+      if (dateRange.endDate) {
+        params.append('endDate', dateRange.endDate)
+      }
+
+      const response = await fetch(`http://localhost:3001/api/export/csv?${params}`)
+      const blob = await response.blob()
+      
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'call_summary.csv'
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Failed to export summary CSV:', error)
+    }
+  }
+
+  const handleExportDetails = async () => {
+    try {
+      const params = new URLSearchParams({
+        format: 'detailed'
+      })
+      
+      if (selectedLocation !== 'all') {
+        params.append('location', selectedLocation)
+      }
+      
+      if (dateRange.startDate) {
+        params.append('startDate', dateRange.startDate)
+      }
+      
+      if (dateRange.endDate) {
+        params.append('endDate', dateRange.endDate)
+      }
+
+      if (phoneFilter) {
+        params.append('phoneNumber', phoneFilter)
+      }
+
+      const response = await fetch(`http://localhost:3001/api/export/csv?${params}`)
+      const blob = await response.blob()
+      
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'call_details.csv'
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Failed to export details CSV:', error)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="max-w-7xl mx-auto">
@@ -387,7 +469,7 @@ export default function Home() {
 
           {/* Detailed View Filters */}
           {!summaryMode && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Location</label>
                 <select
@@ -429,6 +511,19 @@ export default function Home() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <input
+                  type="text"
+                  placeholder="Filter by phone..."
+                  value={phoneFilter}
+                  onChange={(e) => {
+                    setPhoneFilter(e.target.value)
+                    setCurrentPage(0)
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Call View Mode</label>
                 <select
                   value={showAggregatedCalls ? 'aggregated' : 'individual'}
@@ -448,16 +543,41 @@ export default function Home() {
 
         {/* Summary Report or CDR Data Table */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {summaryMode ? 'Call Summary Report' : 'Call Detail Records'}
-            </h2>
-            <p className="text-gray-600">
-              {summaryMode 
-                ? `Summary by clinic ${selectedClinic !== 'all' ? `for ${selectedClinic}` : ''}`
-                : `Showing ${cdrData.length} ${showAggregatedCalls ? 'total calls' : 'total call legs'} (Page ${currentPage + 1})`
-              }
-            </p>
+          <div className="px-6 py-4 bg-gray-50 border-b flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {summaryMode ? 'Call Summary Report' : 'Call Detail Records'}
+              </h2>
+              <p className="text-gray-600">
+                {summaryMode 
+                  ? `Summary by clinic ${selectedClinic !== 'all' ? `for ${selectedClinic}` : ''}`
+                  : `Showing ${cdrData.length} ${showAggregatedCalls ? 'total calls' : 'total call legs'} (Page ${currentPage + 1})`
+                }
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {summaryMode ? (
+                <button
+                  onClick={handleExportSummary}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export Summary CSV
+                </button>
+              ) : (
+                <button
+                  onClick={handleExportDetails}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export Details CSV
+                </button>
+              )}
+            </div>
           </div>
           
           {(summaryMode ? summaryLoading : isLoading) ? (

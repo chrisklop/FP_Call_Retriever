@@ -387,12 +387,13 @@ export class CDRController {
    */
   async getCDRData(req: Request, res: Response) {
     try {
-      const { startDate, endDate, location, limit = 100, offset = 0 } = req.query
+      const { startDate, endDate, location, phoneNumber, limit = 100, offset = 0 } = req.query
 
       const filters = {
         startDate: startDate as string,
         endDate: endDate as string,
         location: location as string,
+        phoneNumber: phoneNumber as string,
         limit: parseInt(limit as string) || 100,
         offset: parseInt(offset as string) || 0
       }
@@ -422,13 +423,14 @@ export class CDRController {
    */
   async exportCSV(req: Request, res: Response) {
     try {
-      const { startDate, endDate, location, department, format: exportFormat = 'grouped' } = req.query
+      const { startDate, endDate, location, department, phoneNumber, format: exportFormat = 'grouped' } = req.query
 
       const filters = {
         startDate: startDate as string,
         endDate: endDate as string,
         location: location as string,
-        department: department as string
+        department: department as string,
+        phoneNumber: phoneNumber as string
       }
 
       let csvData: string
@@ -459,9 +461,39 @@ export class CDRController {
         csvData = [headers, ...rows].map(row => row.join(',')).join('\n')
         filename = `call_summary_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.csv`
       } else {
-        // Export all call legs - would need additional query
-        csvData = 'Individual call legs export not implemented yet'
-        filename = `call_legs_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.csv`
+        // Export detailed call records
+        const callRecords = db.getCDRData({
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          location: filters.location,
+          phoneNumber: filters.phoneNumber
+        })
+        
+        const headers = [
+          'Start Time', 'Answer Time', 'Duration (s)', 'Calling Number', 'Called Number',
+          'User Name', 'Location', 'Direction', 'Call Type', 'Answered', 'Call Outcome',
+          'Release Time', 'Correlation ID', 'Leg Type'
+        ]
+
+        const rows = callRecords.map(record => [
+          record.start_time,
+          record.answer_time || '',
+          record.duration.toString(),
+          record.calling_number,
+          record.called_number,
+          record.user_name,
+          record.location,
+          record.direction,
+          record.call_type,
+          record.answered ? 'Yes' : 'No',
+          record.call_outcome,
+          record.release_time || '',
+          record.correlation_id,
+          record.leg_type || 'Initial'
+        ])
+
+        csvData = [headers, ...rows].map(row => row.join(',')).join('\n')
+        filename = `call_details_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.csv`
       }
 
       res.setHeader('Content-Type', 'text/csv')
