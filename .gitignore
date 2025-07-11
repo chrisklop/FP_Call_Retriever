@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.next/
+backend/node_modules/
+backend/data/cdr_imports/*.csv
+*.db
+.env.local
+.env
